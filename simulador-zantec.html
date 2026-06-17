@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ZANTEC · Simulador de Parcelamento</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap');
+
+:root {
+  --bg: #080c08;
+  --card: #111611;
+  --card2: #0d110d;
+  --line: #1a261a;
+  --green: #6cce1e;
+  --green-light: #8ee83f;
+  --green-dim: #4f9a15;
+  --text: #eef5ef;
+  --muted: #7a9180;
+  --orange: #ffb84d;
+  --red: #ff5c5c;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  padding-bottom: 48px;
+}
+
+/* HEADER */
+header {
+  position: relative;
+  padding: 28px 18px 20px;
+  text-align: center;
+  background: radial-gradient(120% 100% at 50% -10%, #1a2a18 0%, var(--bg) 65%);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(108,206,30,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108,206,30,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 80%);
+}
+.logo {
+  position: relative;
+  font-size: 2rem; font-weight: 800; letter-spacing: .18em;
+  color: var(--text);
+  text-shadow: 0 0 30px rgba(108,206,30,.3);
+}
+.logo span { color: var(--green); }
+.logo-sub {
+  position: relative;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .9rem; font-weight: 600;
+  color: var(--green-light);
+  letter-spacing: .28em; text-transform: uppercase;
+  margin-top: 5px;
+}
+.logo-tag {
+  position: relative;
+  font-size: .66rem; color: var(--muted);
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-top: 8px;
+}
+
+/* WRAP */
+.wrap { max-width: 520px; margin: 0 auto; padding: 16px; }
+
+/* INPUTS */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+}
+.card + .card { margin-top: 10px; }
+
+.field-label {
+  font-size: .72rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .07em;
+  margin-bottom: 8px; font-weight: 600;
+}
+.money-wrap {
+  display: flex; align-items: center;
+  background: var(--card2);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 0 14px;
+  transition: border-color .15s;
+}
+.money-wrap:focus-within { border-color: var(--green); }
+.rs { color: var(--muted); font-weight: 700; font-size: .95rem; margin-right: 6px; }
+.money-wrap input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-size: 1.55rem; font-weight: 800;
+  padding: 14px 0; width: 100%;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+}
+.money-wrap input::placeholder { color: var(--line); }
+
+.field-gap { margin-top: 12px; }
+
+.info-line {
+  margin-top: 10px;
+  font-size: .8rem; color: var(--muted);
+  text-align: center; line-height: 1.5;
+}
+.info-line b { color: var(--green-light); font-variant-numeric: tabular-nums; }
+
+/* AVISO */
+.aviso {
+  display: none;
+  margin-top: 10px;
+  background: #231c0d;
+  border: 1px solid #3d3010;
+  color: var(--orange);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: .78rem; line-height: 1.5;
+}
+.aviso.show { display: block; }
+
+/* GRID À VISTA */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.mini-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.mini-card h4 { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; font-weight: 600; }
+.mini-card .mv { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+
+/* PARCELAS */
+.section-title {
+  font-size: .7rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin: 18px 0 8px; font-weight: 600;
+}
+.parc-list { display: flex; flex-direction: column; gap: 7px; }
+.parc {
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  transition: border-color .15s, background .12s;
+  user-select: none;
+}
+.parc:active { background: #141e14; }
+.parc.sel { border-color: var(--green); background: #14210f; }
+.parc .nx {
+  font-size: .9rem; font-weight: 700; color: var(--muted);
+  width: 38px; flex-shrink: 0;
+}
+.parc.sel .nx { color: var(--green-light); }
+.parc .right { text-align: right; }
+.parc .parcela { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.parc .total-parc { font-size: .7rem; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+/* DESTAQUE */
+.destaque {
+  display: none;
+  margin-top: 10px;
+  background: linear-gradient(150deg, #162610, #0e1b0b);
+  border: 1.5px solid var(--green-dim);
+  border-radius: 16px;
+  padding: 18px;
+}
+.destaque.show { display: block; }
+.destaque .dt-titulo { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; margin-bottom: 6px; font-weight: 600; }
+.destaque .dt-valor { font-size: 2rem; font-weight: 800; color: var(--green-light); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.destaque .dt-det { margin-top: 10px; font-size: .82rem; color: var(--muted); line-height: 1.7; }
+.destaque .dt-det b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* BOTÕES */
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.btn {
+  border: none; border-radius: 14px;
+  padding: 15px 10px;
+  font-size: .88rem; font-weight: 800;
+  cursor: pointer; letter-spacing: .01em;
+  font-family: inherit;
+  transition: opacity .12s;
+}
+.btn:disabled { opacity: .45; pointer-events: none; }
+.btn:active { opacity: .75; }
+.btn-pdf { background: var(--green); color: #06130b; }
+.btn-zap { background: var(--card); color: var(--green-light); border: 1.5px solid var(--green-dim); }
+
+/* RODAPÉ */
+.foot-note {
+  margin-top: 20px;
+  font-size: .67rem; color: #4d6052;
+  text-align: center; line-height: 1.6;
+}
+
+/* TOAST */
+.toast {
+  position: fixed; left: 50%; bottom: 24px;
+  transform: translateX(-50%) translateY(90px);
+  background: var(--green); color: #06130b;
+  font-weight: 800; font-size: .85rem;
+  padding: 12px 24px; border-radius: 40px;
+  transition: transform .22s cubic-bezier(.22,1,.36,1);
+  z-index: 999;
+  box-shadow: 0 8px 30px rgba(0,0,0,.6);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* PDF TEMPLATE (offscreen) */
+#pdfArea {
+  position: fixed; left: -9999px; top: 0;
+  width: 780px; background: #fff; color: #111;
+  font-family: 'Sora', -apple-system, sans-serif;
+}
+.pi { padding: 38px 42px; }
+.ph { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0a0d0a; padding-bottom: 18px; }
+.ph-logo { font-size: 28px; font-weight: 800; letter-spacing: .14em; color: #0a0d0a; }
+.ph-logo span { color: #57a818; }
+.ph-sub { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; font-weight: 600; }
+.ph-data { font-size: 12px; color: #666; text-align: right; line-height: 1.6; }
+.p-titulo { font-size: 18px; font-weight: 800; margin: 22px 0 14px; color: #0a0d0a; }
+.p-resumo { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.p-box { flex: 1; min-width: 120px; border: 1px solid #ddd; border-radius: 10px; padding: 12px 14px; }
+.p-box h5 { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; font-weight: 600; }
+.p-box .pv { font-size: 18px; font-weight: 800; color: #0a0d0a; }
+.p-box.verde { border-color: #57a818; background: #f4fbec; }
+.p-box.verde .pv { color: #447f12; }
+.p-sel { background: #0a0d0a; color: #fff; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+.p-sel .ps-t { font-size: 11px; color: #9fb3a5; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.p-sel .ps-v { font-size: 26px; font-weight: 800; color: #8ee83f; }
+.p-sel .ps-d { font-size: 13px; color: #ccc; margin-top: 8px; line-height: 1.7; }
+table.pt { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.pt th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #777; padding: 8px 10px; border-bottom: 2px solid #0a0d0a; font-weight: 700; }
+table.pt th:last-child, table.pt td:last-child { text-align: right; }
+table.pt td { padding: 7px 10px; border-bottom: 1px solid #eee; font-variant-numeric: tabular-nums; }
+table.pt tr.hl td { background: #eefbdc; font-weight: 800; color: #447f12; }
+.pf { margin-top: 28px; padding-top: 14px; border-top: 1px solid #ddd; font-size: 11px; color: #666; line-height: 1.8; text-align: center; }
+.pf b { color: #0a0d0a; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ZAN<span>TEC</span></div>
+  <div class="logo-sub">iPhone · Vendas e Manutenção</div>
+  <div class="logo-tag">Simulador de Parcelamento</div>
+</header>
+
+<div class="wrap">
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="field-label">Valor do aparelho / serviço</div>
+    <div class="money-wrap">
+      <span class="rs">R$</span>
+      <input type="text" id="inValor" inputmode="numeric" placeholder="0,00" autocomplete="off">
+    </div>
+    <div class="field-gap">
+      <div class="field-label">Entrada (Pix / dinheiro)</div>
+      <div class="money-wrap">
+        <span class="rs">R$</span>
+        <input type="text" id="inEntrada" inputmode="numeric" placeholder="0,00" autocomplete="off">
+      </div>
+    </div>
+    <div class="info-line" id="infoLine" style="display:none"></div>
+    <div class="aviso" id="aviso"></div>
+  </div>
+
+  <!-- BOTÕES (mostrado quando há valor) -->
+  <div class="btn-row" id="btnRow" style="display:none">
+    <button class="btn btn-pdf" id="btnPdf" onclick="gerarPdf()">📄 PDF</button>
+    <button class="btn btn-zap" onclick="copiarZap()">💬 Copiar p/ Zap</button>
+  </div>
+
+  <!-- DESTAQUE -->
+  <div class="destaque" id="destaque">
+    <div class="dt-titulo" id="dtTit"></div>
+    <div class="dt-valor" id="dtVal"></div>
+    <div class="dt-det" id="dtDet"></div>
+  </div>
+
+  <!-- À VISTA -->
+  <div id="aVistaSection" style="display:none">
+    <div class="section-title">À vista no cartão</div>
+    <div class="grid2">
+      <div class="mini-card">
+        <h4>Débito</h4>
+        <div class="mv" id="vDeb">—</div>
+      </div>
+      <div class="mini-card">
+        <h4>Crédito 1x</h4>
+        <div class="mv" id="vCred">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARCELADO -->
+  <div id="parcSection" style="display:none">
+    <div class="section-title">Parcelado no crédito</div>
+    <div class="parc-list" id="parcList"></div>
+  </div>
+
+  <div class="foot-note">
+    Taxas oficiais da maquininha Rede (mastercard/visa, recebimento em 1 dia útil) já repassadas ao cliente.<br>
+    Toque numa parcela para destacá-la na simulação, no PDF e no texto.
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Copiado! ✅</div>
+
+<!-- PDF TEMPLATE -->
+<div id="pdfArea"><div class="pi" id="pdfInner"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+// ===== TAXAS REDE (mastercard/visa, recebimento 1 dia útil) =====
+// Todas confirmadas via simulador oficial do app Rede
+const TAXA = {
+  debito:   1.0110,  // 1,10%
+  credito1: 1.0380,  // 3,80% à vista
+  2:  1.05219, 3:  1.06236, 4:  1.07273, 5:  1.08331,
+  6:  1.09409, 7:  1.10828, 8:  1.11957, 9:  1.13109,
+  10: 1.14286, 11: 1.15487, 12: 1.16713, 13: 1.17966,
+  14: 1.19246, 15: 1.20555, 16: 1.21892, 17: 1.23259,
+  18: 1.24657, 19: 1.26088, 20: 1.27551, 21: 1.29049
+};
+const PARC_MAX = 21; // máximo de parcelas
+
+const el = id => document.getElementById(id);
+const fmt = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtR = v => 'R$ ' + fmt(v);
+
+let selN = null;
+
+// Máscara monetária
+function setupMask(input, cb) {
+  input.addEventListener('input', () => {
+    const raw = input.value.replace(/\D/g, '').slice(0, 10);
+    input.value = raw ? fmt(parseInt(raw) / 100) : '';
+    cb();
+  });
+}
+
+function getV(input) {
+  const r = input.value.replace(/\D/g, '');
+  return r ? parseInt(r) / 100 : 0;
+}
+
+function recalc() {
+  const total   = getV(el('inValor'));
+  const entrada = getV(el('inEntrada'));
+  const resto   = Math.max(0, total - entrada);
+
+  // aviso
+  const av = el('aviso');
+  av.className = 'aviso';
+  if (total > 0 && entrada >= total) {
+    av.textContent = '✅ A entrada já cobre o valor todo — sem necessidade de cartão.';
+    av.classList.add('show');
+  } else if (total > 0 && resto > 0 && resto < 50) {
+    av.textContent = '⚠️ Valor muito baixo no cartão. Sugira Pix ou menos parcelas.';
+    av.classList.add('show');
+  } else if (total > 30000) {
+    av.textContent = '⚠️ Valor alto — confirme antes de mostrar ao cliente.';
+    av.classList.add('show');
+  }
+
+  if (total <= 0 || resto <= 0) {
+    el('infoLine').style.display = 'none';
+    el('btnRow').style.display = 'none';
+    el('aVistaSection').style.display = 'none';
+    el('parcSection').style.display = 'none';
+    el('destaque').classList.remove('show');
+    selN = null;
+    return;
+  }
+
+  // linha info
+  const info = el('infoLine');
+  info.style.display = 'block';
+  info.innerHTML = entrada > 0
+    ? `Entrada <b>${fmtR(entrada)}</b> · Restante no cartão: <b>${fmtR(resto)}</b>`
+    : `Valor no cartão: <b>${fmtR(resto)}</b>`;
+
+  el('btnRow').style.display = 'grid';
+
+  // à vista
+  el('aVistaSection').style.display = 'block';
+  el('vDeb').textContent  = fmtR(resto * TAXA.debito);
+  el('vCred').textContent = fmtR(resto * TAXA.credito1);
+
+  // parcelado
+  el('parcSection').style.display = 'block';
+  let html = '';
+  for (let n = 2; n <= PARC_MAX; n++) {
+    const tc = resto * TAXA[n];
+    const sel = selN === n ? ' sel' : '';
+    html += `
+      <div class="parc${sel}" data-n="${n}" onclick="selecionar(${n})">
+        <div class="nx">${n}x</div>
+        <div class="right">
+          <div class="parcela">${fmtR(tc / n)}</div>
+          <div class="total-parc">total ${fmtR(tc + entrada)}</div>
+        </div>
+      </div>`;
+  }
+  el('parcList').innerHTML = html;
+
+  // destaque
+  if (selN) {
+    const tc = resto * TAXA[selN];
+    el('dtTit').textContent = `Proposta · ${selN}x no crédito`;
+    el('dtVal').textContent = `${selN}x de ${fmtR(tc / selN)}`;
+    el('dtDet').innerHTML =
+      (entrada > 0 ? `Entrada: <b>${fmtR(entrada)}</b><br>` : '') +
+      `Total no cartão: <b>${fmtR(tc)}</b><br>` +
+      `Total geral: <b>${fmtR(tc + entrada)}</b>`;
+    el('destaque').classList.add('show');
+  } else {
+    el('destaque').classList.remove('show');
+  }
+}
+
+function selecionar(n) {
+  selN = selN === n ? null : n;
+  recalc();
+  if (selN) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== COPIAR TEXTO WHATSAPP =====
+async function copiarZap() {
+  const total   = getV(el('inValor'));
+  const entrada = getV(el('inEntrada'));
+  const resto   = Math.max(0, total - entrada);
+  if (resto <= 0) return;
+
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  let t = `📱 *ZANTEC* — _iPhone · Vendas e Manutenção_\n`;
+  t += `*Simulação de pagamento* · ${hoje}\n`;
+  t += `━━━━━━━━━━━━━━━\n\n`;
+  t += `💰 *Valor:* ${fmtR(total)}\n`;
+  if (entrada > 0) {
+    t += `✅ *Entrada (Pix/dinheiro):* ${fmtR(entrada)}\n`;
+    t += `💳 *Restante no cartão:* ${fmtR(resto)}\n`;
+  }
+  t += `\n`;
+  if (selN) {
+    const tc = resto * TAXA[selN];
+    t += `⭐ *Condição sugerida*\n`;
+    t += `*${selN}x de ${fmtR(tc / selN)}* (total ${fmtR(tc + entrada)})\n\n`;
+  }
+  t += `*À vista no cartão*\n`;
+  t += `• Débito: ${fmtR(resto * TAXA.debito)}\n`;
+  t += `• Crédito 1x: ${fmtR(resto * TAXA.credito1)}\n\n`;
+  t += `*Parcelado no crédito*\n`;
+  for (let n = 2; n <= PARC_MAX; n++) {
+    const tc = resto * TAXA[n];
+    t += `• ${n}x de ${fmtR(tc / n)}${selN === n ? ' ⭐' : ''}\n`;
+  }
+  t += `\n━━━━━━━━━━━━━━━\n`;
+  t += `*ZANTEC Assistência Técnica*\n`;
+  t += `📍 Av. Nogueira Padilha, 364 – Sorocaba/SP\n`;
+  t += `📲 (15) 98158-3277 · @zantec_at\n`;
+  t += `🕘 Seg a Sex, 9h às 18h\n`;
+  t += `_Valores válidos na data da simulação._`;
+
+  try {
+    await navigator.clipboard.writeText(t);
+    showToast();
+  } catch {
+    try { await navigator.share({ text: t }); }
+    catch (e) { if (e.name !== 'AbortError') alert('Não foi possível copiar. Tente novamente.'); }
+  }
+}
+
+function showToast() {
+  el('toast').classList.add('show');
+  setTimeout(() => el('toast').classList.remove('show'), 2400);
+}
+
+// ===== GERAR PDF =====
+async function gerarPdf() {
+  const total   = getV(el('inValor'));
+  const entrada = getV(el('inEntrada'));
+  const resto   = Math.max(0, total - entrada);
+  if (resto <= 0) return;
+
+  const btn = el('btnPdf');
+  btn.disabled = true;
+  btn.textContent = 'Gerando…';
+
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  let selHtml = '';
+  if (selN) {
+    const tc = resto * TAXA[selN];
+    selHtml = `
+      <div class="p-sel">
+        <div class="ps-t">Condição sugerida</div>
+        <div class="ps-v">${selN}x de ${fmtR(tc / selN)}</div>
+        <div class="ps-d">${entrada > 0 ? `Entrada: ${fmtR(entrada)} &nbsp;·&nbsp; ` : ''}Total no cartão: ${fmtR(tc)} &nbsp;·&nbsp; Total geral: ${fmtR(tc + entrada)}</div>
+      </div>`;
+  }
+
+  let rows = `
+    <tr><td>Débito</td><td>1x ${fmtR(resto * TAXA.debito)}</td><td>${fmtR(resto * TAXA.debito + entrada)}</td></tr>
+    <tr><td>Crédito 1x</td><td>1x ${fmtR(resto * TAXA.credito1)}</td><td>${fmtR(resto * TAXA.credito1 + entrada)}</td></tr>`;
+  for (let n = 2; n <= PARC_MAX; n++) {
+    const tc = resto * TAXA[n];
+    rows += `<tr class="${selN === n ? 'hl' : ''}">
+      <td>Crédito ${n}x</td><td>${n}x ${fmtR(tc / n)}</td><td>${fmtR(tc + entrada)}</td></tr>`;
+  }
+
+  el('pdfInner').innerHTML = `
+    <div class="ph">
+      <div>
+        <div class="ph-logo">ZAN<span>TEC</span></div>
+        <div class="ph-sub">iPhone · Vendas e Manutenção · Sorocaba/SP</div>
+      </div>
+      <div class="ph-data">Simulação de pagamento<br><b>${hoje}</b></div>
+    </div>
+    <div class="p-titulo">Proposta de parcelamento</div>
+    <div class="p-resumo">
+      <div class="p-box">
+        <h5>Valor do aparelho / serviço</h5>
+        <div class="pv">${fmtR(total)}</div>
+      </div>
+      ${entrada > 0 ? `
+      <div class="p-box verde">
+        <h5>Entrada (Pix / dinheiro)</h5>
+        <div class="pv">${fmtR(entrada)}</div>
+      </div>
+      <div class="p-box">
+        <h5>Restante no cartão</h5>
+        <div class="pv">${fmtR(resto)}</div>
+      </div>` : ''}
+    </div>
+    ${selHtml}
+    <table class="pt">
+      <tr><th>Forma de pagamento</th><th>Parcelas</th><th>Total geral</th></tr>
+      ${rows}
+    </table>
+    <div class="pf">
+      <b>ZANTEC Assistência Técnica</b> · Av. Nogueira Padilha, 364 – Vila Hortência, Sorocaba/SP<br>
+      WhatsApp: (15) 98158-3277 · Instagram: @zantec_at · Seg a Sex, 9h às 18h<br>
+      Valores válidos na data da simulação. Sujeito a alteração sem aviso prévio.
+    </div>`;
+
+  const opt = {
+    margin: 0,
+    filename: 'simulacao-zantec.pdf',
+    image: { type: 'jpeg', quality: 0.96 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    const worker = html2pdf().set(opt).from(el('pdfArea'));
+    const blob = await worker.outputPdf('blob');
+    const file = new File([blob], 'simulacao-zantec.pdf', { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Simulação ZANTEC', text: 'Simulação de parcelamento 👍' });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'simulacao-zantec.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Erro ao gerar PDF. Tente novamente.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📄 PDF';
+}
+
+// Inicializa máscaras
+setupMask(el('inValor'), recalc);
+setupMask(el('inEntrada'), recalc);
+</script>
+</body>
+</html>
